@@ -1,0 +1,118 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String
+  role          String         @default("CUSTOMER") // CUSTOMER, ADMIN
+  googleId      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+  orders        Order[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  category    String   // MILK, CURD, BUTTER, PANEER, CHEESE, GHEE, ICE_CREAM, YOGURT, etc.
+  price       Float
+  stock       Int
+  imageUrl    String
+  sizes       String   // comma-separated values like "500ml, 1L"
+  nutrition   String   // JSON string of nutritional values
+  createdAt   DateTime @default(now())
+}
+
+model Order {
+  id                String   @id @default(uuid())
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id])
+  items             String   // JSON string of items (productId, quantity, price, title)
+  total             Float
+  status            String   @default("PENDING") // PENDING, PAID, DELIVERED, CANCELLED
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  address           String
+  phone             String
+  notes             String?
+  createdAt         DateTime @default(now())
+}
+
+model Subscription {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  productId  String
+  quantity   Int
+  frequency  String   // DAILY, ALTERNATE, WEEKLY, MONTHLY
+  status     String   @default("ACTIVE") // ACTIVE, PAUSED
+  startDate  DateTime @default(now())
+  address    String
+  phone      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model VendingMachine {
+  id           String   @id @default(uuid())
+  name         String
+  latitude     Float
+  longitude    Float
+  address      String
+  status       String   @default("ACTIVE") // ACTIVE, OUT_OF_SERVICE, MAINTENANCE
+  stock        String   // JSON string of product stock e.g. {"Milk 500ml": 20, "Curd 200g": 15}
+  lastRefilled DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  type      String   // SUGGESTION, COMPLAINT, WEB, DELIVERY, PRODUCT
+  ratings   String   // JSON string: {overall: 5, quality: 5, packaging: 5, delivery: 5}
+  comment   String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+}
+
+model CommunityOrder {
+  id            String   @id @default(uuid())
+  apartmentName String
+  location      String
+  families      Int
+  quantity      Float
+  preferredTime String
+  contactName   String
+  phone         String
+  email         String
+  notes         String?
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt     DateTime @default(now())
+}
+
+model BulkOrder {
+  id           String   @id @default(uuid())
+  businessName String
+  gstNumber    String?
+  contactName  String
+  phone        String
+  email        String
+  products     String   // JSON string of requested products
+  quantity     Int
+  frequency    String   // DAILY, ONCE, WEEKLY
+  address      String
+  expectedDate DateTime
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt    DateTime @default(now())
+}
